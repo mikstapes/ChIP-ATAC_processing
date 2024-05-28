@@ -1,9 +1,12 @@
 atac-map.sh
+/project/ibr_procs/dev/pipe_dev/ChIP-ATAC_processing/workflow/rules/test.ipynb
+
 
 # Python
 *.pyc
 *~
 __pycache__
+*.ipynb_checkpoints
 
 # Env
 .env
