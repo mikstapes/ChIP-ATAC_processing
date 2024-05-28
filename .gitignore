@@ -1,11 +1,10 @@
-atac-map.sh
-
 # Python
 *.pyc
 *~
 __pycache__
 *.ipynb_checkpoints
-*.ipynb
+*/*.ipynb
+*test*
 
 # Env
 .env
