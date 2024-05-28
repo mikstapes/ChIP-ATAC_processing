@@ -24,39 +24,28 @@ def get_targets(df):
 
     return targets
 
-def get_fastq(df, aligner = ['bowtie2', 'star']):
-    fastq = []
-    if aligner == 'star':
-        df = df[df['experiment'] == 'RNA']
+def get_fastq(wildcards):
+    reads = ['R1', 'R2'] if info_df.loc[wildcards.sample, 'sequencing_type'] == 'paired-end' else ['R1']
+    if info_df.loc[wildcards.sample, 'experiment'] in ['ATAC', 'ChIPmentation']:
+        fastqs = ['%s/_fastq/%s_%s_001.trimmed.fastq.gz' %(outdir, wildcards.sample, read) for read in reads]
     else:
-        df = df[df['experiment'] != 'RNA']
-    for _,row in df.iterrows():
-        sample = row['sample']
-        if row['experiment'] in ['ATAC', 'ChIPmentation']:
-            fastq += ['%s/_fastq/%s_%s_001.trimmed.fastq.gz' %(outdir, sample, read) for read in ['R1', 'R2']]
-        else:
-            fastq += ['%s/_fastq/%s_%s_001.fastq.gz' %(outdir, sample, read) for read in ['R1', 'R2']] 
+        fastqs = ['%s/_fastq/%s_%s_001.fastq.gz' %(outdir, wildcards.sample, read) for read in reads]
     
-    return(fastq)
+    return([fq for fq in fastqs])
 
 
-def get_bt2idx(df):
+def get_bt2idx(wildcards):
     ref_path = config['ref_dir']
-    #return(os.path.join(ref_path, build) for build in df['build'])
-    outpath = []
-    for _,row in df.iterrows():
-        if row['experiment'] in ['ATAC', 'ChIPmentation']:
-            outpath += [os.path.join(ref_path, row['build'])]
-    return(outpath)
-
+    bt2_idx = os.path.join(ref_path, info_df.loc[wildcards.sample, 'build'])
+    return(bt2_idx)
 
 # def parse_sample_df(df, get=('solexa_paths', 'samples')):
 #     out = []
 #     for _,row in df.iterrows():
 #         lib = row['library_number'].split('-')[0]
-#         flowcell = row['flow_cell']
+#         flowildcardsell = row['flow_cell']
 #         dir = row['solexa']
-#         pattern = re.compile(rf'.*{lib}.*{flowcell}.*\.gz$')
+#         pattern = re.compile(rf'.*{lib}.*{flowildcardsell}.*\.gz$')
 #         if get == 'solexa_paths':
 #             out += [os.path.join(dir, f) for f in os.listdir(dir) if re.match(pattern, f)]
 #         else:

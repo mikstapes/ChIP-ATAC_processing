@@ -1,6 +1,6 @@
 ### GENERAL ###
-metadata: /project/ibr_procs/dev/genomics_pipes/sample_info.tsv
-#outpath: /project/ibr_procs/dev/genomics_pipes/test
+metadata: /project/ibr_procs/dev/pipe_dev/ChIP-ATAC_processing/sample_info.tsv
+
 
 
 ### REFERENCES ###

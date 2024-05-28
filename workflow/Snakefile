@@ -15,7 +15,7 @@ if not os.path.exists(outdir):
     for subdir in ['_fastq', 'logs', 'bam', 'bigwig']:
         os.makedirs(os.path.join(outdir, subdir)) 
 
-info_df = pd.read_csv(config['metadata'], sep = '\t')
+info_df = pd.read_csv(config['metadata'], sep = '\t').set_index('sample', drop=False)
 
 SAMPLES = info_df['sample'].tolist()
 TRIMMED = info_df.loc[info_df['experiment'].isin(['ATAC', 'ChIPmentation']), 'sample'].tolist()
@@ -23,8 +23,11 @@ TRIMMED = info_df.loc[info_df['experiment'].isin(['ATAC', 'ChIPmentation']), 'sa
 rule all:
     input: 
         expand('%s/_fastq/{sample}_{read}_001.fastq.gz' %outdir, sample = SAMPLES, read = ['R1', 'R2']),
-        expand('%s/_fastq/{sample}_{read}_001.trimmed.fastq.gz' %outdir, sample = TRIMMED, read = ['R1', 'R2'])
-        expand('%s/bam/{sample}.sorted.bam' %outdir, sample = SAMPLES)
+        expand('%s/_fastq/{sample}_{read}_001.trimmed.fastq.gz' %outdir, sample = TRIMMED, read = ['R1', 'R2']),
+        expand('%s/bam/{sample}.bam' %outdir, sample = SAMPLES),
+        expand('%s/bam/{sample}.rmdup.bam' %outdir, sample = SAMPLES),
+        expand('%s/bam/{sample}.rmdup.bam.bai' %outdir, sample = SAMPLES),
+        expand('%s/bigwig/{sample}.cpm.bw' %outdir, sample = SAMPLES)
 
 rule link_fastq:
     input: config['metadata']
@@ -39,4 +42,4 @@ rule link_fastq:
 
 
 include: os.path.join("rules", "pre-processing.smk")
-include: os.path.join("rules", "align.smk")
+include: os.path.join("rules", "processing.smk")
