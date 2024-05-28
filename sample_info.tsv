@@ -1,0 +1,3 @@
+solexa	feature	tissue	stage	build	condition	biological_replicate	sequencing_type	experiment	library_number	flow_cell	sample
+/project/solexawork/pipelined/201002_SN417_0148_A_HTNFYDMXX/demux_20201007_SN417-HTNFYDMXX_std-8d1/Project_MDL	ATAC-seq	heart	E105	mm39	WT	Rep1	paired-end	ATAC	L20871-⁠1	S72	ATAC-seq_heart_E105_Rep1_mm39_WT_L20871-1
+/project/solexawork/pipelined/200821_SN417_0127_B_HTHH5DMXX/demux_20200824_SN417-HTHH5DMXX_std-8s0/Project_MDL	H3K27ac	heart	HH22	galGal6	WT	Rep1	paired-end	ChIPmentation	L20633-1	S5	H3K27ac_heart_HH22_Rep1_galGal6_WT_L20633-1

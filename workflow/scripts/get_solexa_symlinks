@@ -1,0 +1,41 @@
+#! /bin/bash
+
+
+if [ $# -ne 2 ]; then
+    echo "Incorrect inputs: ./get_solexa_symlinks <metadata> <outdir> "
+    exit 1
+fi
+    
+metadata="$1"
+outdir="$2"
+
+
+SYML_SOLEXA() {
+    if [ "$#" -ne 5 ]; then
+        echo "missing args"
+        exit 1
+    fi
+    
+    ## parse args
+    local solexa="$1"
+    local lib="$2"; lib="${lib%-*}"
+    local flowcell="$3"
+    local fname_new="$4"
+    local OUT="$5"
+    
+    local fname=$(find "$solexa" -name '*'$lib'*'$flowcell'*gz' -printf "%f\n") 
+    
+    for FILES in $fname; do
+        ext="${FILES#*$flowcell}"
+        #ln -s "$solexa"/$FILES "$OUT"/"$fname_new""$ext"
+        #echo $FILES
+        echo "$OUT"/"$fname_new""$ext"
+        #echo $solexa/$FILES
+    done
+}
+
+export -f SYML_SOLEXA
+    
+awk 'NR>1 {print $1,$10,$11,$12}' $metadata | parallel --colsep ' ' -v SYML_SOLEXA {1} {2} {3} {4} $outdir
+
+#awk 'NR>1 {print $1,$10,$11,$13}' $metadata

@@ -1,0 +1,7 @@
+### GENERAL ###
+metadata: /project/ibr_procs/dev/genomics_pipes/sample_info.tsv
+#outpath: /project/ibr_procs/dev/genomics_pipes/test
+
+
+### REFERENCES ###
+ref_dir: /project/MDL_Ibrahim/MP_all/references

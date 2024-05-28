@@ -1,0 +1,16 @@
+atac-map.sh
+
+# Python
+*.pyc
+*~
+__pycache__
+
+# Env
+.env
+myvenv/
+venv/
+
+# Visual Studio
+.vscode/
+.history/
+*.code-workspace
