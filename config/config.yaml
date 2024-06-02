@@ -1,6 +1,6 @@
 ### GENERAL ###
-metadata: /project/ibr_procs/dev/pipe_dev/ChIP-ATAC_processing/sample_info.tsv
-
+metadata: /project/ibr_procs/dev/pipe_dev/ChIP-ATAC_processing/sample_info_test.tsv
+outdir: /project/ibr_procs/dev/pipe_dev/ChIP-ATAC_processing/test/20240531
 
 
 ### REFERENCES ###

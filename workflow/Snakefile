@@ -6,40 +6,34 @@ from datetime import datetime
 
 configfile: os.path.join('config', 'config.yaml')
 
-include: os.path.join("rules", "common.smk")
+#outdir = datetime.now().strftime('%Y%m%d')
+# if not os.path.exists(outdir):
+#     os.makedirs(outdir)
 
-outdir = datetime.now().strftime('%Y%m%d')
-
-if not os.path.exists(outdir):
-    os.makedirs(outdir)
-    for subdir in ['_fastq', 'logs', 'bam', 'bigwig']:
-        os.makedirs(os.path.join(outdir, subdir)) 
-
+outdir = config['outdir']
+    
 info_df = pd.read_csv(config['metadata'], sep = '\t').set_index('sample', drop=False)
 
-SAMPLES = info_df['sample'].tolist()
-TRIMMED = info_df.loc[info_df['experiment'].isin(['ATAC', 'ChIPmentation']), 'sample'].tolist()
+include: os.path.join("rules", "common.smk")
 
 rule all:
     input: 
-        expand('%s/_fastq/{sample}_{read}_001.fastq.gz' %outdir, sample = SAMPLES, read = ['R1', 'R2']),
-        expand('%s/_fastq/{sample}_{read}_001.trimmed.fastq.gz' %outdir, sample = TRIMMED, read = ['R1', 'R2']),
-        expand('%s/bam/{sample}.bam' %outdir, sample = SAMPLES),
-        expand('%s/bam/{sample}.rmdup.bam' %outdir, sample = SAMPLES),
-        expand('%s/bam/{sample}.rmdup.bam.bai' %outdir, sample = SAMPLES),
-        expand('%s/bigwig/{sample}.cpm.bw' %outdir, sample = SAMPLES)
+        os.path.join(outdir, 'get_symlinks.log'),
+        get_targets
 
+
+## use log as output here to avoid splitting based on different output defined w wcs
 rule link_fastq:
     input: config['metadata']
-    output: expand('%s/_fastq/{sample}_{read}_001.fastq.gz' %outdir, sample = SAMPLES, read = ['R1', 'R2'])
+    output: os.path.join(outdir, 'get_symlinks.log')
     params: 
         outpath = os.path.join(outdir, '_fastq')
     shell:
         """
-        scripts/get_solexa_symlinks {input} {params.outpath}
+        scripts/get_solexa_symlinks {input} {params.outpath} 2> {output}
         """
-
 
 
 include: os.path.join("rules", "pre-processing.smk")
 include: os.path.join("rules", "processing.smk")
+include: os.path.join("rules", "QC.smk")

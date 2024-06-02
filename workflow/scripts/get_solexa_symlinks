@@ -27,9 +27,9 @@ SYML_SOLEXA() {
     
     for FILES in $fname; do
         ext="${FILES#*$flowcell}"
-        #ln -s "$solexa"/$FILES "$OUT"/"$fname_new""$ext"
+        ln -s "$solexa"/$FILES "$OUT"/"$fname_new""$ext"
         #echo $FILES
-        echo "$OUT"/"$fname_new""$ext"
+        #echo "$OUT"/"$fname_new""$ext"
         #echo $solexa/$FILES
     done
 }

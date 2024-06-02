@@ -1,37 +1,53 @@
-def get_logs(outdir, df):
-
-    ## from https://github.com/tobiaszehnder/process_seq_data/blob/main/Snakefile
-    logfiles = []
-    for idx, row in df.iterrows():
-        prefix = '%s/logs/%s' %(outdir, row['sample'])
-        logfiles += [prefix + suffix + '.log' for suffix in ('.cutadapt', '.rmdup', '.bamCoverage')]
-        # if row['experiment'] == 'chromatin-accessibility':
-        #     logfiles += [prefix + '.full.bam.bowtie2.log']
-        # else:
-        #     logfiles += [prefix + '.full.Log.final.out']
-    return logfiles
+SAMPLES = info_df['sample'].tolist()
+TRIMMED = info_df.loc[(info_df['experiment'].isin(['ATAC', 'ChIPmentation'])) & (info_df['sequencing_type'] == 'paired-end'), 'sample'].tolist()
+seq_dict = [
+    {'sample': sample,
+    'seq_type': info_df.loc[sample, 'sequencing_type']
+    }
+    for sample in info_df["sample"]
+    ]
 
 
-def get_targets(df):
-    SAMPLES = df['sample'].tolist()
-    solexa = expand('%s/_fastq/{sample}_{read}_001.fastq.gz' %outdir, sample = SAMPLES, read = ['R1', 'R2'])
-    #fastq = expand('%s/_fastq/{sample}_{read}_001.trimmed.fastq.gz' %outdir, sample = SAMPLES, read = ['R1', 'R2'])
-    bam = expand('%s/bam/{sample}.rmdup.bam' %outdir, sample = SAMPLES)
-    bamidx = expand('%s/bam/{sample}.rmdup.bam.bai' %outdir, sample = SAMPLES)
-    bigwig = expand('%s/bigwig/{sample}.rmdup.cpm.bw' %outdir, sample = SAMPLES)
-    logs = get_logs(outdir, df)
-    targets = solexa + bam + bamidx + bw +logs
+
+def get_fastq(wildcards):
+    if wildcards.sample in TRIMMED:
+        fastqs = ['%s/_fastq/%s_%s_001.trimmed.fastq.gz' %(outdir, wildcards.sample, read) for read in ['R1', 'R2']]
+    else:
+        reads = ['R1', 'R2'] if info_df.loc[wildcards.sample, 'sequencing_type'] == 'paired-end' else ['R1']
+        fastqs = ['%s/_fastq/%s_%s_001.fastq.gz' %(outdir, wildcards.sample, read) for read in reads]
+    #if info_df.loc[wildcards.sample, 'experiment'] in ['ATAC', 'ChIPmentation']:
+    return([fq for fq in fastqs])
+
+
+def get_targets(wildcards):
+    
+    bam1 = expand('%s/{sequencing_type}/bam/{sample}.raw.bam' %outdir, zip, 
+    sequencing_type = [wc['seq_type'] for wc in seq_dict], 
+    sample = [wc['sample'] for wc in seq_dict])
+    
+    bam2 = expand('%s/{sequencing_type}/bam/{sample}.rmdup.bam' %outdir, zip,
+    sequencing_type = [wc['seq_type'] for wc in seq_dict], 
+    sample = [wc['sample'] for wc in seq_dict])
+    
+    bw = expand('%s/{sequencing_type}/bigwig/{sample}.cpm.bw' %outdir, zip,
+    sequencing_type = [wc['seq_type'] for wc in seq_dict], 
+    sample = [wc['sample'] for wc in seq_dict])
+    
+    ## include QC logs to rule all to run QC rules 
+    qc = expand('%s/{sequencing_type}/QC/multiqc_log.html' %outdir, sequencing_type = ['single-end', 'paired-end'])
+    
+
+    #targets = bam1 + bam2 + bamidx + bw + logs
+
+    targets = bam1 + bam2 + bw + qc
+    
 
     return targets
 
-def get_fastq(wildcards):
-    reads = ['R1', 'R2'] if info_df.loc[wildcards.sample, 'sequencing_type'] == 'paired-end' else ['R1']
-    if info_df.loc[wildcards.sample, 'experiment'] in ['ATAC', 'ChIPmentation']:
-        fastqs = ['%s/_fastq/%s_%s_001.trimmed.fastq.gz' %(outdir, wildcards.sample, read) for read in reads]
-    else:
-        fastqs = ['%s/_fastq/%s_%s_001.fastq.gz' %(outdir, wildcards.sample, read) for read in reads]
-    
-    return([fq for fq in fastqs])
+# sample_mates = [{'sample': sample,
+#   'mates': ['R1', 'R2'] if info_df.loc[sample, 'sequencing_type'] == 'paired-end' else ['R1']}
+#     for sample in info_df["sample"]
+#     ]
 
 
 def get_bt2idx(wildcards):
@@ -53,4 +69,15 @@ def get_bt2idx(wildcards):
 
 #     return(out)
 
+## convert info into dictionary to parameterization of rules
+#samples_dict = df.to_dict(orient = "index")
+#SAMPLES = list(samples_dict.keys())
 
+#def getQC(df):
+#     ## adapted from https://github.com/tobiaszehnder/process_seq_data
+#     logfiles = []
+#     log_types = ('.flagstat', '.inserts', 'multiqc')
+#     for _, row in df.iterrows():
+#         prefix = '%s/%s/logs/%s' %(outdir, row['sample'])
+#         logfiles += [prefix + suffix + '.log' for suffix in log_types]
+#     return logfiles
