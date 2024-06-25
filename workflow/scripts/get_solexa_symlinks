@@ -27,10 +27,9 @@ SYML_SOLEXA() {
     
     for FILES in $fname; do
         ext="${FILES#*$flowcell}"
+        ## removes '_001' from linked file name
+        ext="${ext/_001/}"
         ln -s "$solexa"/$FILES "$OUT"/"$fname_new""$ext"
-        #echo $FILES
-        #echo "$OUT"/"$fname_new""$ext"
-        #echo $solexa/$FILES
     done
 }
 

@@ -1,36 +1,44 @@
 ## alignment w bowtie2 & marking duplicates with samblaster
+#@ WIP: take indexing output as input to prompt indexing before aln
 rule align_bt2_PE:
-    input: fastq = get_fastq
+    input: 
+        fastq = get_fastq,
+        index = get_bt2idx
     output: os.path.join(outdir, 'paired-end/bam/{sample}.raw.bam')
-    threads: min(workflow.cores, 12)
+    threads: min(workflow.cores, 8)
     log:
         bowtie2 = os.path.join(outdir, 'paired-end/QC/{sample}.bowtie2.log'),
         markdup = os.path.join(outdir, 'paired-end/QC/{sample}.markdup.log')
     params:
-        alignment = '--mm --very-sensitive --no-discordant -X 1000',
-        bt2_index = get_bt2idx
+        alignment = config['bt2_params'],
+        fragment_size = config['PE_fragment_size'],
+        base_idx = lambda wc: info_df.loc[wc.sample, 'build']
     shell:
         """
-        bowtie2 -x {params.bt2_index} {params.alignment} --threads {threads} \
+        bowtie2 -x {input.index}/{params.base_idx} \
+        {params.alignment} -X {params.fragment_size} --no-discordant \
+        --threads {threads} \
         -1 {input.fastq[0]} -2 {input.fastq[1]} 2> {log.bowtie2} \
-        | samblaster 2> {log.markdup} \
-        | samtools view -Sb -o {output} 
+        | samblaster 2> {log.markdup} | samtools view -Sb -o {output} 
         """
 
 rule align_bt2_SE:
-    input: get_fastq
+    input: 
+        fastq = get_fastq,
+        index = get_bt2idx
     output: os.path.join(outdir, 'single-end/bam/{sample}.raw.bam')
-    threads: min(workflow.cores, 8)
+    threads: min(workflow.cores, 4)
     log:
         bowtie2 = os.path.join(outdir, 'single-end/QC/{sample}.bowtie2.log'),
         markdup = os.path.join(outdir, 'single-end/logs/{sample}.markdup.log')
     params:
-        alignment = '--mm --very-sensitive',
-        bt2_index = get_bt2idx
+        alignment = config['bt2_params'],
+        base_idx = lambda wc: info_df.loc[wc.sample, 'build']
     shell:
         """
-        bowtie2 -x {params.bt2_index} {params.alignment} --threads {threads} \
-        -U {input}  2> {log.bowtie2} \
+        bowtie2 -x {input.index}/{params.base_idx} \
+        {params.alignment} --threads {threads} \
+        -U {input.fastq}  2> {log.bowtie2} \
         | samblaster 2> {log.markdup} \
         | samtools view -Sb -o {output} 
         """
@@ -44,14 +52,15 @@ rule filter_alignments:
         bam_idx = os.path.join(outdir, '{sequencing_type}/bam/{sample}.rmdup.bam.bai')
     threads: min(workflow.cores, 10)
     params:
-        filtering = lambda wc: '-F 4 -q 30 -f 2' if info_df.loc[wc.sample, 'sequencing_type'] == 'paired-end' else '-Sb -F 4 -q 30'
+        mapq = config['MAPQ'], 
+        filtering = lambda wc: '-F 4 -f 2' if info_df.loc[wc.sample, 'sequencing_type'] == 'paired-end' else '-Sb -F 4'
     shell:
         """
         samtools view -h {input} \
         | samblaster --removeDups \
         | grep -v -P '\tchrM\t' \
-		| samtools view -Sb {params.filtering} \
-		| samtools sort -m 2G -@ 5 -o {output.bam};
+        | samtools view -Sb {params.filtering} -q {params.mapq} \
+        | samtools sort -m 2G -@ 5 -o {output.bam};
 
         samtools index {output.bam} {output.bam_idx} 
         """
@@ -66,12 +75,16 @@ rule makebw:
     threads: min(workflow.cores, 10)
     log: os.path.join(outdir, '{sequencing_type}/logs/{sample}.bamCoverage.log')
     params: 
-        extension = lambda wc: '' if info_df.loc[wc.sample, 'sequencing_type'] == 'paired-end' else '250'
+        extension = lambda wc: '' if info_df.loc[wc.sample, 'sequencing_type'] == 'paired-end' else '250',
+        bw_bin = config['bw_binsize'],
+        bw_norm = config['bw_norm']
     shell:
         """
         bamCoverage \
         --bam {input} --outFileName {output} \
-        --binSize 10 --normalizeUsing CPM --skipNAs --extendReads {params.extension} \
-        --numberOfProcessors {threads} 2> {log}
+        --binSize {params.bw_bin} \
+        --normalizeUsing {params.bw_norm} \
+        --extendReads {params.extension} \
+        --skipNAs --numberOfProcessors {threads} 2> {log}
         """
     

@@ -1,0 +1,70 @@
+#! /bin/bash
+
+export PATH=/project/IBR_processing/pkg:$PATH
+
+usage() {
+cat << EOF
+Usage: ${0##*/} -c CONFIG_FILE (optional: -p THREADS -n DRY_RUN)
+
+Processing pipeline for ChIP & ATAC-seq data from fastq to bigwig.
+Author: Mikie Phan (augenlidlos@proton.me)
+
+OPTIONS:
+   -c CONFIG	Path to config file in yaml format. 
+   -p THREADS	Number of threads. Default: 1.
+   -s SOLEXA	Flag to indicate data generated at MPI-MG SeqCore.
+                For other data sources (default), store fastqs in _fastq/ within output directory (as indicated in <config>.yaml)
+   -n DRY_RUN	Flag to do a dry-run, good to test the pipeline before executing jobs
+   -! SMK_ARGS	Optional arguments for Snakemake in quotes, i.e. -! "--debug-dag --unlock -p"
+EOF
+}
+
+## init variables
+
+nthreads="--cores 1"
+# default snakemake behavior:
+## print commands/rules, keep running even if one job fails, and rerun any incomplete jobs
+smk_args="-pk --rerun-incomplete" 
+snakefile="/project/ibr_procs/dev/pipe_dev/ChIP-ATAC_processing/workflow/Snakefile"
+dry_run=""
+source="Other"
+
+while getopts ":c:p:!:nsh" opt; do
+	case $opt in
+		c) config_file=$(realpath $OPTARG) ;; # full path
+		p) nthreads="--cores $OPTARG" ;;
+		n) dry_run="-nq" ;;
+		s) source="Solexa" ;;
+		!) smk_args="$smk_args $OPTARG" ;;
+		h) usage; exit 1 ;;
+		?) usage; exit 1 ;;
+ 	esac
+done
+
+# exit and print usage if config file not passed or doesnt exist 
+if [[ -z ${config_file+x} || ! -f $config_file ]]; then
+	usage
+	exit 1
+fi
+
+# change snakemake args if '-n' flag is provided
+if [ -n "$dry_run" ]; then 
+	smk_args="$dry_run"
+fi
+
+
+cmd="""
+snakemake \
+	--snakefile $snakefile \
+	--configfile $config_file \
+	--config data_source=$source \
+	$smk_args \
+	$nthreads
+"""
+
+# Print command 
+echo $cmd
+
+# Execute pipeline 
+eval $cmd
+

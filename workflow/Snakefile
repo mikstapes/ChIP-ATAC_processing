@@ -6,28 +6,36 @@ from datetime import datetime
 
 configfile: os.path.join('config', 'config.yaml')
 
-#outdir = datetime.now().strftime('%Y%m%d')
-# if not os.path.exists(outdir):
-#     os.makedirs(outdir)
+### Setting variables ###
 
 outdir = config['outdir']
-    
 info_df = pd.read_csv(config['metadata'], sep = '\t').set_index('sample', drop=False)
+bt2_index_dir = os.path.join(config['references'], 'bowtie2_index')
 
+
+## source helper functions + fixed variables
 include: os.path.join("rules", "common.smk")
 
+## define targets
+#@ conditionally getting symlinks if data generated at Seqcore
+solexa = []
+
+if config['data_source'] == 'Solexa':
+    solexa.append('%s/_fastq/get_solexa_links.log' %outdir)
+    
 rule all:
     input: 
-        os.path.join(outdir, 'get_symlinks.log'),
-        get_targets
+        get_targets,
+        solexa
 
 
-## use log as output here to avoid splitting based on different output defined w wcs
-rule link_fastq:
+rule link_solexa:
     input: config['metadata']
-    output: os.path.join(outdir, 'get_symlinks.log')
+    #@ use log as output here to avoid splitting due to different output defined by wcs
+    output: os.path.join(outdir, '_fastq/get_solexa_links.log')
     params: 
         outpath = os.path.join(outdir, '_fastq')
+    message: "Getting fastq files from Solexa"
     shell:
         """
         scripts/get_solexa_symlinks {input} {params.outpath} 2> {output}
