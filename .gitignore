@@ -5,6 +5,7 @@ __pycache__
 *ipynb_checkpoints/
 */*.ipynb
 *test*
+.gitignore
 
 # Env
 .env
@@ -15,3 +16,7 @@ venv/
 .vscode/
 .history/
 *.code-workspace
+
+# snakemake
+
+.snakemake/*

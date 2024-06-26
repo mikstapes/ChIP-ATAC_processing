@@ -10,12 +10,12 @@ rule flagstat:
         """
 
 rule insertsQC:
-    input: os.path.join(outdir, '{sequencing_type}/bam/{sample}.raw.bam')
+    input: os.path.join(outdir, 'paired-end/bam/{sample}.raw.bam')
     output: 
-        os.path.join(outdir, '{sequencing_type}/QC/{sample}_inserts.txt'),
-        os.path.join(outdir, '{sequencing_type}/QC/{sample}_inserts_plot.pdf')
+        os.path.join(outdir, 'paired-end/QC/{sample}_inserts.txt'),
+        os.path.join(outdir, 'paired-end/QC/{sample}_inserts_plot.pdf')
     threads: 1
-    log: os.path.join(outdir, '{sequencing_type}/logs/{sample}.inserts.log')
+    log: os.path.join(outdir, 'paired-end/logs/{sample}.inserts.log')
     shell:
         """
         picard CollectInsertSizeMetrics \
@@ -31,9 +31,10 @@ rule multiQC:
         flagstat = expand('%s/{sequencing_type}/QC/{sample}.flagstat' %outdir, zip,
         sequencing_type = [wc['seq_type'] for wc in seq_dict], 
         sample = [wc['sample'] for wc in seq_dict]),
-        inserts = expand('%s/{sequencing_type}/QC/{sample}_inserts.txt' %outdir, zip,
-        sequencing_type = [wc['seq_type'] for wc in seq_dict], 
-        sample = [wc['sample'] for wc in seq_dict])
+        # inserts = expand('%s/{sequencing_type}/QC/{sample}_inserts.txt' %outdir, zip,
+        # sequencing_type = [wc['seq_type'] for wc in seq_dict]), 
+        inserts = expand('%s/paired-end/QC/{sample}_inserts.txt' %outdir, 
+        sample = [x['sample'] for x in seq_dict if x['seq_type'] == 'paired-end'])
     output: os.path.join(outdir, '{sequencing_type}/QC/multiqc_log.html')
     params: 
         QCdir = os.path.join(outdir, '{sequencing_type}/QC')

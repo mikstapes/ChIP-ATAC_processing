@@ -39,8 +39,7 @@ rule align_bt2_SE:
         bowtie2 -x {input.index}/{params.base_idx} \
         {params.alignment} --threads {threads} \
         -U {input.fastq}  2> {log.bowtie2} \
-        | samblaster 2> {log.markdup} \
-        | samtools view -Sb -o {output} 
+        | samblaster --ignoreUnmated 2> {log.markdup} | samtools view -Sb -o {output} 
         """
 
 ## removes PCR dups, unpaired, remove chrM + mapq 30 -> sort + indexing
@@ -53,11 +52,12 @@ rule filter_alignments:
     threads: min(workflow.cores, 10)
     params:
         mapq = config['MAPQ'], 
+        rmdups = lambda wc: '--removeDups --ignoreUnmated' if info_df.loc[wc.sample, 'sequencing_type'] == 'single-end' else '--removeDups',
         filtering = lambda wc: '-F 4 -f 2' if info_df.loc[wc.sample, 'sequencing_type'] == 'paired-end' else '-Sb -F 4'
     shell:
         """
         samtools view -h {input} \
-        | samblaster --removeDups \
+        | samblaster {params.rmdups} \
         | grep -v -P '\tchrM\t' \
         | samtools view -Sb {params.filtering} -q {params.mapq} \
         | samtools sort -m 2G -@ 5 -o {output.bam};
