@@ -16,7 +16,7 @@ for fname in TRIMMED:
         output: 
             R1 = os.path.join(outdir, '_fastq/%s_R1.trimmed.fastq.gz' %fname),
             R2 = os.path.join(outdir, '_fastq/%s_R2.trimmed.fastq.gz' %fname),
-        threads: min(workflow.cores, 8)
+        threads: min(workflow.cores, 10)
         log: os.path.join(outdir, 'logs/%s.cutadapt.log' %fname)
             #expand('{outdir}/logs/%s.cutadapt.log', outdir=outdir, sample = TRIMMED)
             #os.path.join(outdir, 'logs', '%s.cutadapt.log')

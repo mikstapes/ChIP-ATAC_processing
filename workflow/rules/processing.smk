@@ -5,7 +5,7 @@ rule align_bt2_PE:
         fastq = get_fastq,
         index = get_bt2idx
     output: os.path.join(outdir, 'paired-end/bam/{sample}.raw.bam')
-    threads: min(workflow.cores, 8)
+    threads: min(workflow.cores, 10)
     log:
         bowtie2 = os.path.join(outdir, 'paired-end/QC/{sample}.bowtie2.log'),
         markdup = os.path.join(outdir, 'paired-end/QC/{sample}.markdup.log')
@@ -27,7 +27,7 @@ rule align_bt2_SE:
         fastq = get_fastq,
         index = get_bt2idx
     output: os.path.join(outdir, 'single-end/bam/{sample}.raw.bam')
-    threads: min(workflow.cores, 4)
+    threads: min(workflow.cores, 5)
     log:
         bowtie2 = os.path.join(outdir, 'single-end/QC/{sample}.bowtie2.log'),
         markdup = os.path.join(outdir, 'single-end/logs/{sample}.markdup.log')
@@ -48,8 +48,8 @@ rule filter_alignments:
     input: os.path.join(outdir, '{sequencing_type}/bam/{sample}.raw.bam')
     output: 
         bam = os.path.join(outdir, '{sequencing_type}/bam/{sample}.rmdup.bam'),
-        bam_idx = os.path.join(outdir, '{sequencing_type}/bam/{sample}.rmdup.bam.bai')
-    threads: min(workflow.cores, 10)
+        bam_idx = os.path.join(outdir, '{sequencing_type}/bam/{sample}.rmdup.bam.csi')
+    threads: min(workflow.cores, 5)
     params:
         mapq = config['MAPQ'], 
         rmdups = lambda wc: '--removeDups --ignoreUnmated' if info_df.loc[wc.sample, 'sequencing_type'] == 'single-end' else '--removeDups',
@@ -62,7 +62,7 @@ rule filter_alignments:
         | samtools view -Sb {params.filtering} -q {params.mapq} \
         | samtools sort -m 2G -@ 5 -o {output.bam};
 
-        samtools index {output.bam} {output.bam_idx} 
+        samtools index -c {output.bam} -o {output.bam_idx} 
         """
 
 
@@ -70,9 +70,11 @@ rule filter_alignments:
 # ## extend SE reads to 250 bc most fragments are 200-300bp in size
 
 rule makebw:
-    input: os.path.join(outdir, '{sequencing_type}/bam/{sample}.rmdup.bam')
+    input: 
+        bam = os.path.join(outdir, '{sequencing_type}/bam/{sample}.rmdup.bam'),
+        bam_idx = os.path.join(outdir, '{sequencing_type}/bam/{sample}.rmdup.bam.csi')
     output: os.path.join(outdir, '{sequencing_type}/bigwig/{sample}.cpm.bw')
-    threads: min(workflow.cores, 10)
+    threads: min(workflow.cores, 5)
     log: os.path.join(outdir, '{sequencing_type}/logs/{sample}.bamCoverage.log')
     params: 
         extension = lambda wc: '' if info_df.loc[wc.sample, 'sequencing_type'] == 'paired-end' else '250',
@@ -81,7 +83,7 @@ rule makebw:
     shell:
         """
         bamCoverage \
-        --bam {input} --outFileName {output} \
+        --bam {input.bam} --outFileName {output} \
         --binSize {params.bw_bin} \
         --normalizeUsing {params.bw_norm} \
         --extendReads {params.extension} \

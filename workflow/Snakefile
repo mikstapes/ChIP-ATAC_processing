@@ -17,16 +17,24 @@ bt2_index_dir = os.path.join(config['references'], 'bowtie2_index')
 include: os.path.join("rules", "common.smk")
 
 ## define targets
-#@ conditionally getting symlinks if data generated at Seqcore
-solexa = []
 
+#@ conditionally run QC
+run_QC = []
+if config['logQC'] == 1:
+    run_QC = expand('%s/{sequencing_type}/QC/multiqc_log.html' %outdir, sequencing_type = ['single-end', 'paired-end'])
+
+#@ conditionally getting symlinks for data generated at Seqcore
+solexa = []
 if config['data_source'] == 'Solexa':
     solexa.append('%s/_fastq/get_solexa_links.log' %outdir)
-    
+
+
 rule all:
     input: 
         get_targets,
+        run_QC,
         solexa
+        
 
 
 rule link_solexa:

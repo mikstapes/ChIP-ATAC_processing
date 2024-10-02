@@ -1,15 +1,15 @@
 ### GENERAL ###
 
 ## Path to sample information as tsv file. Ideally stored in the same folder as outdir. 
-metadata: /project/ibr_procs/dev/pipe_dev/ChIP-ATAC_processing/sample_info_test.tsv
+metadata: /project/IBR_processing/MP/villar2015/monDom5/sample_info.tsv
 
 ## Path to directory where the pipeline will run and write output files
 # When fastqs aren't stored with MPI SeqCore Solexa, 
 # create an additional _fastq/ directory inside outdir and store files there
-outdir: /project/ibr_procs/dev/pipe_dev/ChIP-ATAC_processing/test/20240531
+outdir: /project/IBR_processing/MP/villar2015/monDom5
 
 ## Path to reference genome fasta file
-references: /project/ibr_procs/dev/pipe_dev/references
+references: /project/IBR_processing/references
 
 ### PARAMETERS ###
 ### !!! Change from default ONLY when you know what you're doing ###
@@ -23,7 +23,7 @@ bt2_params: '--mm --very-sensitive'
 # alignment quality cutoff for filtering
 MAPQ: 30
 # window size in bp for aggregate bam to generate bigwig
-bw_binsize: 10
+bw_binsize: 20
 # normalization methods for bigwig tracks. CPM is good for ChIP/ATAC
 bw_norm: CPM
 

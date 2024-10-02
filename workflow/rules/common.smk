@@ -35,10 +35,12 @@ def get_targets(wildcards):
     sample = [wc['sample'] for wc in seq_dict])
     
     ## include QC logs to rule all to run QC rules 
-    qc = expand('%s/{sequencing_type}/QC/multiqc_log.html' %outdir, sequencing_type = ['single-end', 'paired-end'])
+    ### added to main snakefile to optionally run QC
+    
+    ### qc = expand('%s/{sequencing_type}/QC/multiqc_log.html' %outdir, sequencing_type = ['single-end', 'paired-end'])
+    ### targets = bam1 + bam2 + bw + qc
 
-
-    targets = bam1 + bam2 + bw + qc
+    targets = bam1 + bam2 + bw
     
 
     return targets

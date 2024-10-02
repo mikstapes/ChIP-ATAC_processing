@@ -11,9 +11,10 @@ Author: Mikie Phan (augenlidlos@proton.me)
 
 OPTIONS:
    -c CONFIG	Path to config file in yaml format. 
-   -p THREADS	Number of threads. Default: 1.
+   -p THREADS	Number of threads. Default = 1.
    -s SOLEXA	Flag to indicate data generated at MPI-MG SeqCore.
-                For other data sources (default), store fastqs in _fastq/ within output directory (as indicated in <config>.yaml)
+                For other data sources (default), store fastqs in _fastq/ within output directory (as indicated in <config>.yaml).
+   -q QC		Run QC for processing steps (0=no QC, 1=run QC). Default = 1. 
    -n DRY_RUN	Flag to do a dry-run, good to test the pipeline before executing jobs
    -! SMK_ARGS	Optional arguments for Snakemake in quotes, i.e. -! "--debug-dag --unlock -p"
 EOF
@@ -22,6 +23,8 @@ EOF
 ## init variables
 
 nthreads="--cores 1"
+logQC="1"
+
 # default snakemake behavior:
 ## print commands/rules, keep running even if one job fails, and rerun any incomplete jobs
 smk_args="-pk --rerun-incomplete" 
@@ -29,10 +32,11 @@ snakefile="/project/ibr_procs/dev/pipe_dev/ChIP-ATAC_processing/workflow/Snakefi
 dry_run=""
 source="Other"
 
-while getopts ":c:p:!:nsh" opt; do
+while getopts ":c:p:q:!:nsh" opt; do
 	case $opt in
 		c) config_file=$(realpath $OPTARG) ;; # full path
 		p) nthreads="--cores $OPTARG" ;;
+		q) logQC="$OPTARG" ;;
 		n) dry_run="-nq" ;;
 		s) source="Solexa" ;;
 		!) smk_args="$smk_args $OPTARG" ;;
@@ -57,7 +61,9 @@ cmd="""
 snakemake \
 	--snakefile $snakefile \
 	--configfile $config_file \
-	--config data_source=$source \
+	--config \
+	data_source=$source \
+	logQC=$logQC \
 	$smk_args \
 	$nthreads
 """
