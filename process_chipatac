@@ -28,7 +28,7 @@ logQC="1"
 # default snakemake behavior:
 ## print commands/rules, keep running even if one job fails, and rerun any incomplete jobs
 smk_args="-pk --rerun-incomplete" 
-snakefile="/project/ibr_procs/dev/pipe_dev/ChIP-ATAC_processing/workflow/Snakefile"
+snakefile="./workflow/Snakefile"
 dry_run=""
 source="Other"
 
